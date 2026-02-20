@@ -1,5 +1,9 @@
-const { Client, Events, GatewayIntentBits } = require('discord.js');
-require('dotenv').config();
+import { Client, Events, GatewayIntentBits } from 'discord.js';
+
+import "dotenv/config"
+
+import { initDB, addServer} from "./src/database.js";
+
 const token = process.env.TOKEN_DS;
 const guildID = process.env.GUILD;
 
@@ -9,9 +13,15 @@ var roles = {
 
 var nextCrops = [ /* names ... */ ]
 
-console.log(token)
+//console.log(token)
 
-const client = new Client({ intents: [GatewayIntentBits.Guilds] });
+const client = new Client({
+    intents: [
+        GatewayIntentBits.Guilds,
+        GatewayIntentBits.GuildMessages,
+        GatewayIntentBits.MessageContent,
+    ],
+});
 
 client.once(Events.ClientReady, (readyClient) => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
@@ -25,9 +35,9 @@ client.once(Events.ClientReady, (readyClient) => {
             }
 
             const result = await response.json();
-            console.log(result);
+            //console.log(result);
 
-            console.log(result[0].timestamp - new Date().getTime())
+            //console.log(result[0].timestamp - new Date().getTime())
 
             let time = result[0].timestamp - new Date().getTime()
 
@@ -50,20 +60,20 @@ client.once(Events.ClientReady, (readyClient) => {
                 roles[roleName] = role.id;
             }
 
-            //console.log(result[0])
+            //console.log(result[0])  
 
             nextCrops = result[0].cropNames;
 
             setTimeout(async() => {
                 console.log("!!!!!")
                 const channel = await client.channels.fetch("1474462322335420450");
-                let msg = ""
+                let msg = "Contest starts on <t:" + Math.floor(result[0].timestamp / 1000) + ":R> \n"
                 for (let i = 0; i < nextCrops.length; i++){
                     msg += "<@&" + roles[nextCrops[i]] + "> "
                 }
 
                 await channel.send(msg);
-            }, (time) < 180000 ? 1 : time)
+            }, (time) < 180000 ? 1 : 1)
         } 
         catch (error) {
             console.error(error.message);
@@ -73,8 +83,18 @@ client.once(Events.ClientReady, (readyClient) => {
         //
         //const data = await getData();
         //await channel.send(data);
-    }, 1000 * 60 * 20) // 20 minutes
+    }, 1000 * 60 * 20 /*5000*/) // 20 minutes
+});
+
+client.on("messageCreate", message => {
+    if (message.author.bot) return;
+
+    if (message.content.toUpperCase() === "JACOB SETUP") {     
+        addServer(message.guildId, message.channelId);
+        message.reply("Server added!");
+    }
 });
 
 client.login(token);
 
+initDB()
