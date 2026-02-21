@@ -21,7 +21,6 @@ export function sendMessageToAllChannels(crops, timestamp){
             return;
         }
 
-        console.log(`Sending to guild ${row.guildID}, channel ${row.channelID}`);
         await checkRoles(row.guildID, crops);
         await sendMessage(row.channelID, row.guildID, timestamp);
     });

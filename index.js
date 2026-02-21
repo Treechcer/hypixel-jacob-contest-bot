@@ -1,8 +1,10 @@
-import { Client, Events, GatewayIntentBits } from 'discord.js';
+import { Client, Events, GatewayIntentBits, resolveSKUId } from 'discord.js';
 
 import "dotenv/config"
 
 import { initDB, addServer, sendMessageToAllChannels } from "./src/database.js";
+
+const url = "https://jacobs.strassburger.dev/api/jacobcontests";
 
 var globalResponse = false
 
@@ -17,8 +19,6 @@ var roles = {
 
 var nextCrops = [ /* names ... */ ]
 
-//console.log(token)
-
 const client = new Client({
     intents: [
         GatewayIntentBits.Guilds,
@@ -27,46 +27,50 @@ const client = new Client({
     ],
 });
 
-client.once(Events.ClientReady, (readyClient) => {
+async function callAPI() {
+    console.log("API CALLED!")
+    const response = await fetch(url, {method : "GET"});
+    if (!response.ok) {
+        throw new Error(`Response status: ${response.status}`);
+    }
+
+    globalResponse = await response.json();
+}
+
+client.once(Events.ClientReady, async (readyClient) => {
 	console.log(`Ready! Logged in as ${readyClient.user.tag}`);
 
-    setInterval(async() => {
-        const url = "https://jacobs.strassburger.dev/api/jacobcontests";
-        try {
-            if (!globalResponse || !globalResponse.length){
-                const response = await fetch(url, {method : "GET"});
-                if (!response.ok) {
-                    throw new Error(`Response status: ${response.status}`);
+    await callAPI()
+
+    setTimeout(async() =>{
+        setInterval(async() => {
+            try {
+                if (!globalResponse || !globalResponse.length){
+                    await callAPI();
                 }
 
-                const result = await response.json();
-                globalResponse = result
+                time = globalResponse[0].timestamp - new Date().getTime()
+
+                nextCrops = globalResponse[0].cropNames;
+
+                sendMessageToAllChannels(nextCrops, globalResponse[0].timestamp)
+            } 
+            catch (error) {
+                console.error(error.message);
             }
 
-            console.log("Fetched contests, next timestamp:", globalResponse[0].timestamp);
+            roles = {}
+            globalResponse.shift()
 
-            //console.log(result[0])  
+            console.log("Next Event is in: " + globalResponse[0].timestamp - new Date().getTime() - (3 * 60 * 1000) + " minutes")
 
-            time = globalResponse[0].timestamp - new Date().getTime()
-
-            //console.log(result[0].timestamp - new Date().getTime())
-
-            nextCrops = globalResponse[0].cropNames;
-
-            sendMessageToAllChannels(nextCrops, globalResponse[0].timestamp)
-        } 
-        catch (error) {
-            console.error(error.message);
-        }
-
-        roles = {}
-        globalResponse.shift()
-
-        //const channel = await client.channels.fetch("1474462322335420450");
-        //
-        //const data = await getData();
-        //await channel.send(data);
-    }, 1000 * 60 * 20 /*2000*/) // 20 minutes
+            //const channel = await client.channels.fetch("1474462322335420450");
+            //
+            //const data = await getData();
+            //await channel.send(data);
+        }, 1000 * 60 * 60 /*2000*/)}, // 60 minutes
+        globalResponse[0].timestamp - new Date().getTime() - (3 * 60 * 1000) // this should notify ALWAYS areound 3 minutes before the event? Is this correct
+    );
 });
 
 export async function checkRoles(guildID, crops){
@@ -107,7 +111,6 @@ export async function sendMessage(channelID, guildID, timestamp){
             }
             
             await channel.send(msg);
-            console.log("Message sent");
         }
         catch (err) {
             console.error("Error sending message:", err)
