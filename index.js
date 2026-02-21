@@ -75,7 +75,7 @@ client.once(Events.ClientReady, async (readyClient) => {
     await callAPI()
     //console.log(globalResponse[0])
     setTimeout(run,
-        globalResponse[0].timestamp - new Date().getTime() < (3 * 60 * 1000) ? 1 : globalResponse[0].timestamp - new Date().getTime() - (3 * 60 * 1000) // this should notify ALWAYS areound 3 minutes before the event? Is this correct
+        globalResponse[0].timestamp - new Date().getTime() - (3 * 60 * 1000) > 0 ? globalResponse[0].timestamp - new Date().getTime() - (3 * 60 * 1000) : 1 // this should notify ALWAYS areound 3 minutes before the event? Is this correct
     );
 });
 
