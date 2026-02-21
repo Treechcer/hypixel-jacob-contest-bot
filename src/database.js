@@ -14,8 +14,9 @@ export function addServer(guilID, channelID){
     db.run(`INSERT OR REPLACE INTO servers VALUES(?, ?);`, [guilID, channelID]);
 }
 
-export function sendMessageToAllChannels(crops, timestamp){
+export async function sendMessageToAllChannels(crops, timestamp){
     db.each(`SELECT * FROM servers;`, async (err, row) => {
+        console.log("sending message guild " + row.guildID);
         if (err) {
             console.error(err);
             return;
