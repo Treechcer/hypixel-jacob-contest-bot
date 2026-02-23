@@ -1,0 +1,19 @@
+{
+  "name": "jacoob-contest-bot",
+  "version": "1.0.0",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "description": "",
+  "dependencies": {
+    "discord.js": "^14.25.1",
+    "dotenv": "^17.3.1",
+    "mysql": "^2.18.1",
+    "sqlite3": "^5.1.7"
+  }
+}
